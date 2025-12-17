@@ -371,5 +371,6 @@ if (!$clientId) {
 </div>
 
 <script>
+	window.pointRates = <?= json_encode($arResult['POINT_RATES']) ?>;
 	window.incomingPayment = new BX.Brs.IncomingPayment();
 </script>

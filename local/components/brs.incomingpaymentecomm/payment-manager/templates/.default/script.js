@@ -48,6 +48,29 @@ BX.Brs.IncomingPayment.prototype.init = function () {
 };
 
 /**
+ * Получает курс конвертации для указанного типа баллов.
+ * 
+ * @param {string} pointType - тип баллов ('mr_rub' или 'imperia_rub')
+ * @returns {number|null} - курс конвертации или null если не найден
+ */
+BX.Brs.IncomingPayment.prototype.getPointConversionRate = function(pointType) {
+	var rates = window.pointRates;
+	var type = pointType.toUpperCase();
+	
+	if (!rates) {
+		return null;
+	}
+	
+	if (type === 'MR_RUB') {
+		return rates.MR_RATE || null;
+	} else if (type === 'IMPERIA_RUB') {
+		return rates.IMPERIA_RATE || null;
+	}
+	
+	return null;
+};
+
+/**
  * Предустановленные настройки полей.
  * 
  * @returns {undefined}
@@ -256,10 +279,11 @@ BX.Brs.IncomingPayment.prototype.initiatePaymentPoint = function (dealId, contac
 	
 	if(amount > 0){
 			
-		let rate = 1;
-
-		if(formData['POINT_TYPE'].toUpperCase() == 'MR_RUB'){
-			rate = 0.25;
+		let rate = this.getPointConversionRate(formData['POINT_TYPE']);
+	
+		if (rate === null) {
+			this.wrong('Не удалось получить курс баллов для выбранного типа.');
+			return;
 		}
 
 		amount = amount * rate;
@@ -368,10 +392,11 @@ BX.Brs.IncomingPayment.prototype.setInputPointAmount = function (response){
 		
 		if(amount > 0){
 			
-			let rate = 1;
-			
-			if(pointType == 'MR_RUB'){
-				rate = 0.25;
+			let rate = BX.Brs.IncomingPayment.prototype.getPointConversionRate(pointType);
+
+			if (rate === null) {
+				this.wrong('Не удалось получить курс баллов для выбранного типа.');
+				return;
 			}
 			
 			amount = amount / rate;
