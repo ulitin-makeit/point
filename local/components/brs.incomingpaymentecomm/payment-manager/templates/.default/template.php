@@ -314,6 +314,7 @@ if (!$clientId) {
 					<div class="ui-ctl ui-ctl-after-icon ui-ctl-dropdown">
 						<div class="ui-ctl-after ui-ctl-icon-angle"></div>
 						<select name="POINT_TYPE" class="ui-ctl-element">
+							<option value="" selected disabled>Выберите тип баллов</option>
 							<option value="mr_rub">MR</option>
 							<option value="imperia_rub">Imperia</option>
 						</select>
