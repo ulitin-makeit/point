@@ -85,6 +85,40 @@ class DealIncomePaymentManager extends CBitrixComponent
 		return $client['FULL_NAME'];
 	}
 
+	/**
+	 * Получает курсы баллов для контакта
+	 * @return array|null
+	 */
+	private function getPointRates(): ?array
+	{
+		if (!$this->arResult['CONTACT_ID']) {
+			return null;
+		}
+		
+		if (!Loader::includeModule('brs.point')) {
+			return null;
+		}
+		
+		$point = \Brs\Point\Model\Orm\PointTable::getByPrimary($this->arResult['CONTACT_ID']);
+		
+		if ($point->getSelectedRowsCount() === 0) {
+			return null;
+		}
+		
+		$pointData = $point->fetchObject();
+		
+		return [
+			'MR_RATE' => $pointData->getMrRate(),
+			'MR_ACCOUNT_ID' => $pointData->getMrAccountId(),
+			'IMPERIA_RATE' => $pointData->getImperiaRate(),
+			'IMPERIA_ACCOUNT_ID' => $pointData->getImperiaAccountId(),
+			'MR' => $pointData->getMr(),
+			'MR_RUB' => $pointData->getMrRub(),
+			'IMPERIA' => $pointData->getImperia(),
+			'IMPERIA_RUB' => $pointData->getImperiaRub(),
+		];
+	}
+
 	public function executeComponent()
 	{
 
@@ -105,6 +139,9 @@ class DealIncomePaymentManager extends CBitrixComponent
 		$this->arResult['CLIENT_FULL_NAME'] = $this->getClientFullName($client['CONTACT_ID']);
 
 		$this->arResult['IS_CREDIT'] = Credit\Repository::isExistActive($this->arParams['DEAL_ID']); // есть ли активный кредит в сделке
+
+		// Получаем курсы баллов для контакта
+		$this->arResult['POINT_RATES'] = $this->getPointRates();
 
 		global $GLOBALS;
 
