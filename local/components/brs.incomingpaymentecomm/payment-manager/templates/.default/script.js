@@ -234,6 +234,12 @@ BX.Brs.IncomingPayment.prototype.initiatePaymentPoint = function (dealId, contac
 		formData[item['name']] = item['value'];
 	});
 	
+	// Проверка что тип баллов выбран
+	if (!formData['POINT_TYPE'] || formData['POINT_TYPE'] === '') {
+		this.wrong('Необходимо выбрать тип баллов.');
+		return;
+	}
+	
 	var pointMaxAmount = parseFloat($('.crm_entity_field_point_' + formData['POINT_TYPE'].replace('_rub', '') + ':first').text());
 
 	if (contactId == 0) {
@@ -339,11 +345,13 @@ BX.Brs.IncomingPayment.prototype.setInputPointAmount = function (response){
 	
 	var pointType = inputPointType.val();
 	
-	if(typeof pointType == 'undefined'){
-		pointType = 'MR_RUB';
-	} else {
-		pointType = pointType.toUpperCase();
+	// Если тип не выбран — очищаем поле суммы и выходим
+	if(!pointType || pointType === ''){
+		inputAmountPoint.val('');
+		return;
 	}
+	
+	pointType = pointType.toUpperCase();
 	
 	var amountDebt = parseFloat(domAmountDebp.attr('data-amount-debt'));
 	var amount = parseFloat(response.data[pointType]);
