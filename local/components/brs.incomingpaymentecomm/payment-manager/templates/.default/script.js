@@ -313,7 +313,7 @@ BX.Brs.IncomingPayment.prototype.initiatePaymentPoint = function (dealId, contac
 			return;
 		}
 
-		amount = amount * rate;
+		amount = Math.ceil(amount * rate);
 		
 	}
 	
@@ -426,7 +426,7 @@ BX.Brs.IncomingPayment.prototype.setInputPointAmount = function (response){
 				return;
 			}
 			
-			amount = amount / rate;
+			amount = Math.ceil(amount * rate);
 			
 		}
 		
