@@ -24,13 +24,8 @@
 
 		/**
 		 * Метод списывает баллы с клиента
-		 * 
-		 * @param int $dealId
-		 * @param int $contactId
-		 * @param float $amount
-		 * @return AjaxJson
 		 */
-		public function runAction(int $dealId, int $contactId, float $amount, string $rateType): AjaxJson {
+		public function runAction(int $dealId, int $contactId, float $amountRub, int $amountPoints, string $rateType): AjaxJson {
 
 			$rateTypeEis = str_replace(['mr_rub', 'imperia_rub'], ['MR', 'Imperia_R'], $rateType); // тип баллов для EIS
 
@@ -110,7 +105,7 @@
 			$payment->setPaymentType(PaymentTransactionTable::PAYMENT_TYPE_INCOMING);
 			$payment->setStatus(PaymentTransactionTable::PAYMENT_STATUS_SUCCESS);
 
-			$payment->setAmount($amount);
+			$payment->setAmount($amountRub);
 			$payment->setDealId($dealId);
 
 			$payment->setDate((new \DateTime)->format('d.m.Y H:i:s'));
@@ -144,16 +139,13 @@
 
 			$uuid = Uuid::uuid4()->toString();
 
-			// рассчитываем количество баллов для списания с округлением в большую сторону
-			$pointAmount = (int) ceil($amount * $currencyRate);
-
 			// осуществляем запрос в EIS и списываем с баланса
 			$pointEis = Eis::call('brs.main', 'PayWithBonus', [
 				'clientId' => $contactPropertyKsId,
 				'acctNum' => $acctNum,
 				'loyaltyProgramCode' => $rateTypeEis,
 				'operationType' => 1,
-				'amount' => $pointAmount,
+				'amount' => $amountPoints,
 				'guid' => $uuid
 			]);
 
@@ -175,7 +167,7 @@
 			PayController::updatePropertyDealTypePay('point', $dealId);
 
 			// добавление записи об оплате в историю сделки
-			PayController::addEventHistoryCurrency($dealId, $amount, 'point');
+			PayController::addEventHistoryCurrency($dealId, $amountRub, 'point');
 
 			return AjaxJson::createSuccess($pointEis);
 

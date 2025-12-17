@@ -322,7 +322,8 @@ BX.Brs.IncomingPayment.prototype.initiatePaymentPoint = function (dealId, contac
 		return;
 	}
 	
-	this.makePaymentPoint(dealId, contactId, formData['POINT_TYPE'], amount);
+	var amountRub = parseFloat(formData['AMOUNT_POINT']);
+	this.makePaymentPoint(dealId, contactId, formData['POINT_TYPE'], amountRub, amount);
 	
 };
 
@@ -438,7 +439,7 @@ BX.Brs.IncomingPayment.prototype.setInputPointAmount = function (response){
 	
 }
 
-BX.Brs.IncomingPayment.prototype.makePaymentPoint = function (dealId, contactId, rateType, amount){
+BX.Brs.IncomingPayment.prototype.makePaymentPoint = function (dealId, contactId, rateType, amountRub, amountPoints){
 	
 	BX.financeCardTabManager.showLoading();
 	
@@ -448,7 +449,8 @@ BX.Brs.IncomingPayment.prototype.makePaymentPoint = function (dealId, contactId,
 			dealId: dealId,
 			contactId: contactId,
 			rateType: rateType,
-			amount: amount
+			amountRub: amountRub,
+			amountPoints: amountPoints
 		}
 	}).then(function (response){
 
