@@ -78,10 +78,12 @@ class BrsPoint {
 			// обновляем отображаемые значения баллов программы MR
 			$('.crm_entity_field_point_mr').text(response.data.MR);
 			$('.crm_entity_field_point_mr_rub').text(response.data.MR_RUB);
+			$('.crm_entity_field_point_mr_account_id').text(response.data.MR_ACCOUNT_ID || '—');
 			
 			// обновляем отображаемые значения баллов программы Imperia
 			$('.crm_entity_field_point_imperia').text(response.data.IMPERIA);
 			$('.crm_entity_field_point_imperia_rub').text(response.data.IMPERIA_RUB);
+			$('.crm_entity_field_point_imperia_account_id').text(response.data.IMPERIA_ACCOUNT_ID || '—');
 			
 		}.bind(this), (response) => {
 		
@@ -124,97 +126,120 @@ class BrsPoint {
 	/**
 	 * Формирует и вставляет в DOM HTML-разметку формы с информацией о баллах.
 	 * Создаёт секцию с полями для отображения баллов MR и Imperia (в баллах и рублях),
-	 * блок для сообщений об ошибках и кнопку обновления данных.
+	 * номеров программ лояльности, блок для сообщений об ошибках и кнопку обновления данных.
 	 */
 	renderSection(){
 		
-		// HTML-разметка секции с информацией о бонусных баллах
+		// HTML-разметка секции с информацией о бонусных баллах (компактная версия)
 		var html = `
-			<div class="ui-entity-editor-section" data-cid="user_v0cwaljr1">
+			<style>
+				.brs-point-section .brs-point-grid {
+					display: grid;
+					grid-template-columns: repeat(3, 1fr);
+					gap: 8px 12px;
+					padding: 8px 0;
+				}
+				.brs-point-section .brs-point-field {
+					min-width: 0;
+				}
+				.brs-point-section .brs-point-label {
+					font-size: 11px;
+					color: #959ca4;
+					margin-bottom: 2px;
+					white-space: nowrap;
+					overflow: hidden;
+					text-overflow: ellipsis;
+				}
+				.brs-point-section .brs-point-value {
+					font-size: 13px;
+					color: #333;
+					font-weight: 500;
+				}
+				.brs-point-section .brs-point-program-title {
+					font-size: 12px;
+					font-weight: 600;
+					color: #525c69;
+					padding: 6px 0 4px;
+					border-bottom: 1px solid #e8e8e8;
+					margin-bottom: 6px;
+				}
+				.brs-point-section .brs-point-program-block {
+					margin-bottom: 10px;
+				}
+				.brs-point-section .brs-point-program-block:last-of-type {
+					margin-bottom: 0;
+				}
+				@media (max-width: 1200px) {
+					.brs-point-section .brs-point-grid {
+						grid-template-columns: repeat(2, 1fr);
+					}
+				}
+				@media (max-width: 900px) {
+					.brs-point-section .brs-point-grid {
+						grid-template-columns: 1fr;
+					}
+				}
+			</style>
+			<div class="ui-entity-editor-section brs-point-section" data-cid="user_v0cwaljr1">
 				<!-- Заголовок секции -->
 				<div class="ui-entity-editor-section-header">
 					<div class="ui-entity-editor-header-title">
 						<span class="ui-entity-editor-header-title-text">Информация по баллам</span>
-						<input class="ui-entity-editor-header-title-text" style="display: none;">
 					</div>
 				</div>
 				
 				<!-- Контент секции с полями баллов -->
 				<div class="ui-entity-editor-section-content">
-					<div class="ui-entity-editor-content-block" style="margin-bottom: 0px;">
+					<div class="ui-entity-editor-content-block" style="margin-bottom: 0px; padding: 0 12px 12px;">
 						
-						<!-- Первая строка: баллы MR -->
-						<div class="row" style="display: flex;">
-							<!-- Поле: количество баллов MR -->
-							<div class="ui-entity-editor-content-block ui-entity-editor-content-block-field-custom-date" style="flex: 0 50%;">
-								<div class="ui-entity-editor-block-before-action"></div>
-								<div class="ui-entity-editor-block-draggable-btn-container"></div>
-								<div class="ui-entity-editor-block-title">
-									<label class="ui-entity-editor-block-title-text">Баллов MP</label>
+						<!-- Блок программы MR -->
+						<div class="brs-point-program-block">
+							<div class="brs-point-program-title">Программа MR</div>
+							<div class="brs-point-grid">
+								<div class="brs-point-field">
+									<div class="brs-point-label">Баллов</div>
+									<div class="brs-point-value crm_entity_field_point_mr">0</div>
 								</div>
-								<div class="ui-entity-editor-content-block">
-									<span class="fields date field-wrap">
-										<span class="fields date field-item crm_entity_field_point_mr" id="crm_entity_field_point_mr">0</span>
-									</span>
+								<div class="brs-point-field">
+									<div class="brs-point-label">В рублях</div>
+									<div class="brs-point-value crm_entity_field_point_mr_rub">0</div>
 								</div>
-							</div>
-							
-							<!-- Поле: баллы MR в рублях -->
-							<div class="ui-entity-editor-content-block ui-entity-editor-content-block-field-custom-date" style="flex: 0 50%;">
-								<div class="ui-entity-editor-block-before-action"></div>
-								<div class="ui-entity-editor-block-draggable-btn-container"></div>
-								<div class="ui-entity-editor-block-title">
-									<label class="ui-entity-editor-block-title-text">Баллы MP в рублях</label>
-								</div>
-								<div class="ui-entity-editor-content-block">
-									<span class="fields date field-wrap">
-										<span class="fields date field-item crm_entity_field_point_mr_rub">0</span>
-									</span>
+								<div class="brs-point-field">
+									<div class="brs-point-label">№ программы</div>
+									<div class="brs-point-value crm_entity_field_point_mr_account_id">—</div>
 								</div>
 							</div>
 						</div>
 						
-						<!-- Вторая строка: баллы Imperia -->
-						<div class="row" style="display: flex; margin-top: -13px;">
-							<!-- Поле: количество баллов Imperia -->
-							<div class="ui-entity-editor-content-block ui-entity-editor-content-block-field-custom-date" style="flex: 0 50%; margin: 0px 0px 0px;">
-								<div class="ui-entity-editor-block-before-action"></div>
-								<div class="ui-entity-editor-block-draggable-btn-container"></div>
-								<div class="ui-entity-editor-block-title">
-									<label class="ui-entity-editor-block-title-text">Баллов Imperia</label>
+						<!-- Блок программы Imperia -->
+						<div class="brs-point-program-block">
+							<div class="brs-point-program-title">Программа Imperia</div>
+							<div class="brs-point-grid">
+								<div class="brs-point-field">
+									<div class="brs-point-label">Баллов</div>
+									<div class="brs-point-value crm_entity_field_point_imperia">0</div>
 								</div>
-								<div class="ui-entity-editor-content-block">
-									<span class="fields date field-wrap">
-										<span class="fields date field-item crm_entity_field_point_imperia">0</span>
-									</span>
+								<div class="brs-point-field">
+									<div class="brs-point-label">В рублях</div>
+									<div class="brs-point-value crm_entity_field_point_imperia_rub">0</div>
 								</div>
-							</div>
-							
-							<!-- Поле: баллы Imperia в рублях -->
-							<div class="ui-entity-editor-content-block ui-entity-editor-content-block-field-custom-date" style="flex: 0 50%; margin: 0px 0px 0px;">
-								<div class="ui-entity-editor-block-before-action"></div>
-								<div class="ui-entity-editor-block-draggable-btn-container"></div>
-								<div class="ui-entity-editor-block-title">
-									<label class="ui-entity-editor-block-title-text">Баллы Imperia в рублях</label>
-								</div>
-								<div class="ui-entity-editor-content-block">
-									<span class="fields date field-wrap">
-										<span class="fields date field-item crm_entity_field_point_imperia_rub">0</span>
-									</span>
+								<div class="brs-point-field">
+									<div class="brs-point-label">№ программы</div>
+									<div class="brs-point-value crm_entity_field_point_imperia_account_id">—</div>
 								</div>
 							</div>
 						</div>
 						
 						<!-- Блок для отображения ошибок (по умолчанию скрыт) -->
-						<div class="ui-alert ui-alert-danger crm_entity_point_error_block" style="display: none;">
+						<div class="ui-alert ui-alert-danger crm_entity_point_error_block" style="display: none; margin-top: 10px;">
 							<span class="ui-alert-message">
 								<strong>Ошибка!</strong> 
-								<span class="crm_entity_point_error_block_message">Текст предупреждения находится здесь.</span>
+								<span class="crm_entity_point_error_block_message"></span>
 							</span>
 						</div>
 						
 						<!-- Кнопка обновления баланса баллов -->
-						<div class="row" style="display: flex;">
+						<div style="margin-top: 10px;">
 							<button class="ui-btn ui-btn-xs ui-btn-primary entityPointViewCountPoint">Обновить</button>
 						</div>
 						
