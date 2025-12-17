@@ -144,13 +144,16 @@
 
 			$uuid = Uuid::uuid4()->toString();
 
+			// рассчитываем количество баллов для списания с округлением в большую сторону
+			$pointAmount = (int) ceil($amount * $currencyRate);
+
 			// осуществляем запрос в EIS и списываем с баланса
 			$pointEis = Eis::call('brs.main', 'PayWithBonus', [
 				'clientId' => $contactPropertyKsId,
 				'acctNum' => $acctNum,
 				'loyaltyProgramCode' => $rateTypeEis,
 				'operationType' => 1,
-				'amount' => $amount,
+				'amount' => $pointAmount,
 				'guid' => $uuid
 			]);
 
