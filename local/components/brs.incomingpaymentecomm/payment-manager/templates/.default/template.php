@@ -232,6 +232,9 @@ if (!$clientId) {
 							   type="text"
 							   class="ui-ctl-element"
 							   placeholder="Сумма баллов в рублях">
+						<div class="incoming-payment-point-rate" style="display: none; margin-top: 5px; font-size: 12px; color: #666;">
+							Курс: <span class="incoming-payment-point-rate-value">—</span>
+						</div>
 					</div>
 				</div>
 

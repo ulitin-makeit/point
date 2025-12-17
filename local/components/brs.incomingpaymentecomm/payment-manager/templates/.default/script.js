@@ -10,6 +10,7 @@ BX.Brs.IncomingPayment.prototype.init = function () {
 	$('.incoming-payments-section-left form').on('submit', function (event) { event.preventDefault(); });
 
 	$('.incoming-payment-item-settings input[name=PAYMENT_TYPE]').on('click', this.changeDisplayPaymentType);
+	$('.payment-point select[name="POINT_TYPE"]').on('change', this.onPointTypeChange.bind(this));
 
 	this.changePayment = $('.cor-client-choice .cor-client-type-select input[type="radio"]');
 	this.paymentByUser = $('#paymentByUser');
@@ -17,6 +18,8 @@ BX.Brs.IncomingPayment.prototype.init = function () {
 	
 	this.createAdvancePayment = $('#createAdvancePayment');
 	this.paymentType = $('.incoming-payment-item .selector-wrapper input[type="radio"]');
+	this.pointRateDisplay = $('.incoming-payment-point-rate');
+	this.pointRateValue = $('.incoming-payment-point-rate-value');
 	
 	this.containerPaymentType = $('.incoming-payment-item .selector-wrapper > div > div');
 	this.paymentTypeCard = $('#paymentImmediatelyRadio');
@@ -68,6 +71,30 @@ BX.Brs.IncomingPayment.prototype.getPointConversionRate = function(pointType) {
 	}
 	
 	return null;
+};
+
+/**
+ * Обновляет отображение курса баллов при смене типа.
+ * 
+ * @param {string} pointType - тип баллов ('mr_rub' или 'imperia_rub')
+ */
+BX.Brs.IncomingPayment.prototype.updatePointRateDisplay = function(pointType) {
+	if (!pointType || pointType === '') {
+		this.pointRateDisplay.hide();
+		return;
+	}
+	
+	var rate = this.getPointConversionRate(pointType);
+	
+	if (rate === null) {
+		this.pointRateDisplay.hide();
+		return;
+	}
+	
+	var typeName = pointType.toUpperCase() === 'MR_RUB' ? 'MR' : 'Imperia';
+	
+	this.pointRateValue.text(rate + ' руб. за 1 балл ' + typeName);
+	this.pointRateDisplay.show();
 };
 
 /**
@@ -457,6 +484,14 @@ BX.Brs.IncomingPayment.prototype.makePaymentPoint = function (dealId, contactId,
 
 	});
 	
+};
+
+/**
+ * Обработчик смены типа баллов в селекте.
+ */
+BX.Brs.IncomingPayment.prototype.onPointTypeChange = function(event) {
+	var pointType = $(event.currentTarget).val();
+	this.updatePointRateDisplay(pointType);
 };
 
 BX.Brs.IncomingPayment.prototype.prepareParams = function () {
