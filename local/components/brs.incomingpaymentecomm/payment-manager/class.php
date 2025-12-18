@@ -20,7 +20,7 @@ class DealIncomePaymentManager extends CBitrixComponent
 		$emailList = [];
 
 		$deal = CAllCrmDeal::GetByID($this->arParams['DEAL_ID']);
-		
+
 		$clientId = $deal['CONTACT_ID'];
 
 		$this->arResult['CONTACT_ID'] = $clientId;
@@ -94,19 +94,19 @@ class DealIncomePaymentManager extends CBitrixComponent
 		if (!$this->arResult['CONTACT_ID']) {
 			return null;
 		}
-		
+
 		if (!Loader::includeModule('brs.point')) {
 			return null;
 		}
-		
+
 		$point = \Brs\Point\Model\Orm\PointTable::getByPrimary($this->arResult['CONTACT_ID']);
-		
+
 		if ($point->getSelectedRowsCount() === 0) {
 			return null;
 		}
-		
+
 		$pointData = $point->fetchObject();
-		
+
 		return [
 			'MR_RATE' => $pointData->getMrRate(),
 			'MR_ACCOUNT_ID' => $pointData->getMrAccountId(),
