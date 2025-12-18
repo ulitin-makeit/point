@@ -75,9 +75,9 @@ if (!$clientId) {
 				<div>Создать платёж для Клиента</div>
 				<div>
 					<?if($arResult['IS_ACCESS_BUTTON_ALL']){?>
-					<button id="createAdvancePayment" class="ui-btn ui-btn-primary">
-						Платёж&nbsp;&nbsp;<i class="fal fa-file-alt"></i>
-					</button>
+						<button id="createAdvancePayment" class="ui-btn ui-btn-primary">
+							Платёж&nbsp;&nbsp;<i class="fal fa-file-alt"></i>
+						</button>
 					<? } ?>
 				</div>
 				<?
@@ -88,10 +88,10 @@ if (!$clientId) {
 				?>
 				<div>Создать платёж погашения Кредита</div>
 				<div>
-				    <?if($arResult['IS_ACCESS_BUTTON_ALL']){?>
-					<button id="createCreditPayment" class="ui-btn ui-btn-primary">
-						Платёж по кредиту&nbsp;&nbsp;<i class="fal fa-file-alt"></i>
-					</button>
+					<?if($arResult['IS_ACCESS_BUTTON_ALL']){?>
+						<button id="createCreditPayment" class="ui-btn ui-btn-primary">
+							Платёж по кредиту&nbsp;&nbsp;<i class="fal fa-file-alt"></i>
+						</button>
 					<? } ?>
 				</div>
 				<?
@@ -100,11 +100,11 @@ if (!$clientId) {
 				?>
 				<div>Создать платёж для Клиента</div>
 				<div>
-				    <?if($arResult['IS_ACCESS_BUTTON_ALL']){?>
-					<button id="createAdvancePayment" class="ui-btn ui-btn-primary">
-						Платёж&nbsp;&nbsp;<i class="fal fa-file-alt"></i>
-					</button>
-                    <? } ?>
+					<?if($arResult['IS_ACCESS_BUTTON_ALL']){?>
+						<button id="createAdvancePayment" class="ui-btn ui-btn-primary">
+							Платёж&nbsp;&nbsp;<i class="fal fa-file-alt"></i>
+						</button>
+					<? } ?>
 				</div>
 				<?
 			}
@@ -112,27 +112,27 @@ if (!$clientId) {
 		?>
 	</div>
 	<style>
-		.cor-client-choice {
+        .cor-client-choice {
             font-size: 14px;
-			font-weight: normal;
-			font-family: "Helvetica Neue", Helvetica, Arial, "sans-serif";
-		}
+            font-weight: normal;
+            font-family: "Helvetica Neue", Helvetica, Arial, "sans-serif";
+        }
 
-		.cor-client-type {
-			display: flex;
-		}
+        .cor-client-type {
+            display: flex;
+        }
 
         .cor-client-type strong {
             margin-right: 15px;
             line-height: 24px;
             font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, "sans-serif";
-		}
+        }
 
-		.cor-client-type-select {
-			display: flex;
+        .cor-client-type-select {
+            display: flex;
             flex-direction: column;
             align-items: flex-start;
-		}
+        }
 	</style>
 
 	<form>
@@ -189,10 +189,10 @@ if (!$clientId) {
 						</div>
 
 						<?if($arResult['CORP']){?>
-						<div>
-							<input type="radio" id="paymentByInvoice" name="PAYMENT_TYPE" value="invoice">
-							<label for="paymentByInvoice">Оплата по счёту</label>
-						</div>
+							<div>
+								<input type="radio" id="paymentByInvoice" name="PAYMENT_TYPE" value="invoice">
+								<label for="paymentByInvoice">Оплата по счёту</label>
+							</div>
 						<?}?>
 
 						<div>
@@ -205,17 +205,17 @@ if (!$clientId) {
 
 			<?Asset::getInstance()->addJs('/local/templates/bitrix24/js/point.js');?>
 			<script type="text/javascript">
-				BX.ready(function(){
-					setTimeout(function(){
-						new BrsPoint('deal', <?=$arResult['DEAL_ID']?>, '.incoming-payment-item-info-point', {
-							eventSuccessPointAction: BX.Brs.IncomingPayment.prototype.setPointAmount
-						});
-					}, 500);
-				});
+                BX.ready(function(){
+                    setTimeout(function(){
+                        new BrsPoint('deal', <?=$arResult['DEAL_ID']?>, '.incoming-payment-item-info-point', {
+                            eventSuccessPointAction: BX.Brs.IncomingPayment.prototype.setPointAmount
+                        });
+                    }, 500);
+                });
 			</script>
 
 			<div class="incoming-payment-item-info-point" style="display: none;">
-				
+
 			</div>
 
 			<div class="incoming-payment-item-left">
@@ -232,9 +232,9 @@ if (!$clientId) {
 							   type="text"
 							   class="ui-ctl-element"
 							   placeholder="Сумма баллов в рублях">
-						<div class="incoming-payment-point-rate" style="display: none; margin-top: 5px; font-size: 12px; color: #666;">
-							Курс: <span class="incoming-payment-point-rate-value">—</span>
-						</div>
+					</div>
+					<div class="incoming-payment-point-rate" style="display: none; margin-top: 5px; font-size: 12px; color: #666;">
+						Курс: <span class="incoming-payment-point-rate-value">—</span>
 					</div>
 				</div>
 
@@ -311,26 +311,26 @@ if (!$clientId) {
 				</div>
 				<div class="payment-point">
 					<div class="ui-ctl ui-ctl-textbox ui-ctl-wa">
-					<!-- .ui-ctl.ui-ctl-after-icon.ui-ctl-dropdown > 
-					div.ui-ctl-after.ui-ctl-icon-angle + 
-					select.ui-ctl > option -->
-					<div class="ui-ctl ui-ctl-after-icon ui-ctl-dropdown">
-						<div class="ui-ctl-after ui-ctl-icon-angle"></div>
-						<select name="POINT_TYPE" class="ui-ctl-element">
-							<option value="" selected disabled>Выберите тип баллов</option>
-							<option value="mr_rub">MR</option>
-							<option value="imperia_rub">Imperia</option>
-						</select>
-					</div>
+						<!-- .ui-ctl.ui-ctl-after-icon.ui-ctl-dropdown >
+						div.ui-ctl-after.ui-ctl-icon-angle +
+						select.ui-ctl > option -->
+						<div class="ui-ctl ui-ctl-after-icon ui-ctl-dropdown">
+							<div class="ui-ctl-after ui-ctl-icon-angle"></div>
+							<select name="POINT_TYPE" class="ui-ctl-element">
+								<option value="" selected disabled>Выберите тип баллов</option>
+								<option value="mr_rub">MR</option>
+								<option value="imperia_rub">Imperia</option>
+							</select>
+						</div>
 					</div>
 				</div>
 				<div class="incoming-payment-item-buttons">
 					<?if($arResult['IS_ACCESS_BUTTON_ALL']){?>
-					<button class="ui-btn ui-btn-success make-incoming-payment">Выполнить перевод</button>
-					<button class="ui-btn ui-btn-success make-incoming-payment-link">Получить ссылку</button>
-					<button class="ui-btn ui-btn-success make-incoming-payment-invoice">Создать платёж</button>
-					<button class="ui-btn ui-btn-success make-incoming-payment-point" data-deal-id="<?=$arResult['DEAL_ID']?>" data-contact-id="<?=$arResult['CONTACT_ID']?>">Оплатить</button>
-                    <? } ?>
+						<button class="ui-btn ui-btn-success make-incoming-payment">Выполнить перевод</button>
+						<button class="ui-btn ui-btn-success make-incoming-payment-link">Получить ссылку</button>
+						<button class="ui-btn ui-btn-success make-incoming-payment-invoice">Создать платёж</button>
+						<button class="ui-btn ui-btn-success make-incoming-payment-point" data-deal-id="<?=$arResult['DEAL_ID']?>" data-contact-id="<?=$arResult['CONTACT_ID']?>">Оплатить</button>
+					<? } ?>
 				</div>
 			</div>
 		</div>
@@ -374,6 +374,6 @@ if (!$clientId) {
 </div>
 
 <script>
-	window.pointRates = <?= json_encode($arResult['POINT_RATES']) ?>;
-	window.incomingPayment = new BX.Brs.IncomingPayment();
+    window.pointRates = <?= json_encode($arResult['POINT_RATES']) ?>;
+    window.incomingPayment = new BX.Brs.IncomingPayment();
 </script>
