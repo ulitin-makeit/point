@@ -1,0 +1,275 @@
+#incomingPayments {
+    font-weight: bold;
+}
+
+#methodCalculationSelect {
+    margin: 0;
+    padding: 0;
+    max-width: 335px;
+    font-size: 18px;
+    line-height: 26px;
+    border: none;
+    -moz-appearance: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.create-payment-container {
+    margin-bottom: 20px;
+    padding: 0 20px;
+    display: grid;
+    grid-template-columns: auto min-content;
+    gap: 10px;
+    font-size: 16px;
+    align-items: center;
+}
+
+#incomingPayments input[name=AMOUNT], #incomingPayments input[name=AMOUNT_POINT] {
+    font-size: 19px;
+    color: #7e8a9a;
+    font-family: Consolas, 'Courier New', serif;
+}
+
+.incoming-payment-item-settings {
+    padding-bottom: 20px;
+    grid-column: 1/3;
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: start;
+    gap: 20px;
+    border-bottom: 1px dotted #e6e6e6;
+}
+
+.incoming-payment-item-settings .selector-wrapper {
+    text-align: right;
+}
+
+.selector-wrapper {
+    margin-bottom: 20px;
+}
+
+.selector-wrapper:last-child {
+    margin-bottom: 0;
+}
+
+.selector {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    background-color: #eef2f4;
+    border-radius: 13px;
+}
+
+.selector > div:first-child {
+    text-align: right;
+}
+
+.selector > div:last-child {
+    text-align: left;
+}
+
+.selector label {
+    display: block;
+    padding: 0 14px;
+    height: 26px;
+    line-height: 26px;
+    border-radius: 13px;
+    font-weight: normal;
+    color: #525c68;
+    cursor: pointer;
+}
+
+.selector input[type=radio] {
+    display: none;
+}
+
+.selector input[type=radio]:checked + label {
+    background-color: #3bc8f5;
+    color: white;
+}
+
+.incoming-payment-item.payment-hide {
+    display: none;
+}
+
+.incoming-payment-item {
+    margin-bottom: 20px;
+    padding: 20px;
+    background-color: #fff;
+    border: 1px dashed #cccccc;
+    display: grid;
+    gap: 20px;
+    grid-template-columns: 1.5fr 1fr;
+}
+
+.incoming-payment-item select:disabled {
+    color: black;
+    cursor: default;
+}
+
+.incoming-payment-item select:disabled:hover {
+    color: black;
+    cursor: default;
+}
+
+.incoming-payment-item-right {
+    display: grid;
+    min-width: 220px;
+}
+
+.incoming-payment-item-right div:last-child {
+    align-self: end;
+    text-align: center;
+}
+
+.incoming-payment-item-right.incoming-payment-type-payment-invoice div:last-child {
+    align-self: start;
+}
+
+.incoming-payment-input-item {
+    margin-bottom: 20px;
+}
+
+.incoming-payment-item-left .incoming-payment-input-item:last-child {
+    margin-bottom: 0;
+}
+
+.payment-link {
+    position: relative;
+}
+
+.incoming-payment-item-right.incoming-payment-type-card .payment-link {
+    display: none;
+}
+
+.incoming-payment-item-select-card {
+    margin-bottom: 20px;
+}
+.incoming-payment-item-left-point-amount { display: none; }
+.incoming-payment-item-right.incoming-payment-type-payment-link .incoming-payment-item-select-card {
+    display: none;
+}
+
+.incoming-payment-item-right.incoming-payment-type-payment-link .make-incoming-payment {
+    display: none;
+}
+
+.incoming-payment-item-right.incoming-payment-type-payment-link .make-incoming-payment-invoice {
+    display: none;
+}
+
+.incoming-payment-item-right.incoming-payment-type-card .make-incoming-payment-link {
+    display: none;
+}
+
+.incoming-payment-item-right.incoming-payment-type-card .make-incoming-payment-point {
+    display: none;
+}
+
+.incoming-payment-item-right.incoming-payment-type-card .make-incoming-payment-invoice {
+    display: none;
+}
+
+.incoming-payment-item-right.incoming-payment-type-card .payment-point { display: none; }
+
+.incoming-payment-item-right.incoming-payment-type-payment-link .make-incoming-payment-point {
+    display: none;
+}
+.incoming-payment-item-right.incoming-payment-type-payment-link .payment-point { display: none; }
+
+.incoming-payment-item-right.incoming-payment-type-payment-invoice .make-incoming-payment-link,
+.incoming-payment-item-right.incoming-payment-type-payment-invoice .make-incoming-payment,
+.incoming-payment-item-right.incoming-payment-type-payment-invoice .make-incoming-payment-point {
+    display: none;
+}
+
+.incoming-payment-item-right.incoming-payment-type-point .make-incoming-payment-link {
+    display: none;
+}
+
+.incoming-payment-item-right.incoming-payment-type-point .make-incoming-payment {
+    display: none;
+}
+
+.incoming-payment-item-right.incoming-payment-type-point .make-incoming-payment-invoice {
+    display: none;
+}
+
+.incoming-payment-item-right.incoming-payment-type-point .payment-link {
+    display: none;
+}
+
+.incoming-payment-item-right.incoming-payment-type-point .incoming-payment-item-select-card {
+    display: none;
+}
+
+.incoming-payment-item-info-point { grid-column: 1/3; }
+.incoming-payment-item-info-point .ui-entity-editor-section { background-color: #f5f8f9; margin-bottom: 0px; border: 1px solid #dde2e5; border-radius: 6px; }
+
+.incoming-payment-item-right.incoming-payment-type-point .make-incoming-payment-point { margin-top: 20px; }
+
+.incoming-payment-item-left.incoming-payment-type-point .incoming-payment-item-payment-info { display: none; }
+
+.incoming-payment-item-right.incoming-payment-type-point .payment-point .ui-ctl {
+    width: 100%;
+}
+
+.payment-link .fa-copy {
+    position: absolute;
+    top: 12px;
+    right: 11px;
+    color: #525c68;
+    cursor: pointer;
+    z-index: 1;
+}
+
+.payment-link .fa-copy:hover {
+    color: #3bc8f5;
+}
+
+.incoming-payment-type-payment-invoice .incoming-payment-item-select-card,
+.incoming-payment-type-payment-invoice .payment-link,
+.incoming-payment-type-payment-invoice .payment-point,
+.incoming-payment-type-payment-invoice .incoming-payment-item-payment-info {
+    display: none;
+}
+
+
+
+#selectClientEmail {
+    margin: 20px 0;
+    width: 100%;
+    height: 98px;
+    border: 1px solid #c6cdd3;
+}
+
+#selectClientEmail:focus {
+    border-color: #66afe9;
+    outline: none;
+}
+
+.selector-disabled .ui-ctl-after {
+    display: none;
+}
+
+.selector-disabled select {
+    pointer-events: none;
+}
+
+.selector-disabled:before {
+    position: absolute;
+    top: 12px;
+    right: 13px;
+    color: #aaafc5;
+    font-family: "Font Awesome 5 Pro";
+    font-weight: 900;
+    content: '\f023';
+    z-index: 2;
+}
+
+.nomenclature-for-payment {
+    padding: 10px 0;
+    font-size: 15px;
+    line-height: 19px;
+    font-weight: normal;
+    color: #525c68;
+}
