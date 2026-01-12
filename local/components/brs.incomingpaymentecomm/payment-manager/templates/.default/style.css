@@ -166,7 +166,16 @@
     display: none;
 }
 
+/* Скрываем курс по умолчанию, показываем только при оплате баллами */
+.incoming-payment-point-rate {
+    display: none;
+}
+
 .incoming-payment-item-left.incoming-payment-type-point .incoming-payment-item-left-point-amount {
+    display: block;
+}
+
+.incoming-payment-item-left.incoming-payment-type-point .incoming-payment-point-rate {
     display: block;
 }
 

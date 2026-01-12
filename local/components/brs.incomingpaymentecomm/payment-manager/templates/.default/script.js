@@ -53,6 +53,20 @@ BX.Brs.IncomingPayment.prototype.init = function () {
 
 	setTimeout(this.inputPreset, 300); // предустановленные настройки полей в форме создания платежа
 
+	// Инициализируем отображение курса баллов при загрузке
+	this.initPointRateDisplay();
+};
+
+/**
+ * Инициализирует отображение курса баллов при загрузке страницы.
+ * Показывает курс для текущего выбранного типа баллов.
+ */
+BX.Brs.IncomingPayment.prototype.initPointRateDisplay = function() {
+	var pointType = $('.payment-point select[name="POINT_TYPE"]').val();
+	this.updatePointRateDisplay(pointType);
+	
+	// Также пересчитываем баллы, если есть сумма в рублях
+	this.recalculatePointsFromRub();
 };
 
 /**
@@ -123,21 +137,20 @@ BX.Brs.IncomingPayment.prototype.recalculatePointsFromRub = function() {
  */
 BX.Brs.IncomingPayment.prototype.updatePointRateDisplay = function(pointType) {
 	if (!pointType || pointType === '') {
-		this.pointRateDisplay.hide();
+		this.pointRateValue.text('—');
 		return;
 	}
 
 	var rate = this.getPointConversionRate(pointType);
 
 	if (rate === null) {
-		this.pointRateDisplay.hide();
+		this.pointRateValue.text('—');
 		return;
 	}
 
 	var typeName = pointType.toUpperCase() === 'MR_RUB' ? 'MR' : 'Imperia';
 
 	this.pointRateValue.text(rate + ' руб. за 1 балл ' + typeName);
-	this.pointRateDisplay.show();
 };
 
 /**
