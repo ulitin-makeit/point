@@ -220,17 +220,26 @@ if (!$clientId) {
 
 			<div class="incoming-payment-item-left">
 				<div class="incoming-payment-input-item">
-					<div class="ui-ctl ui-ctl-textbox ui-ctl-wa incoming-payment-item-left-amount">
-						<input name="AMOUNT"
-							   type="text"
-							   class="ui-ctl-element"
-							   placeholder="">
-					</div>
-					<div class="ui-ctl ui-ctl-textbox ui-ctl-wa incoming-payment-item-left-point-amount">
-						<input name="AMOUNT_POINT"
-							   type="text"
-							   class="ui-ctl-element"
-							   placeholder="">
+					<div class="incoming-payment-amounts-row">
+						<div class="incoming-payment-amount-field incoming-payment-item-left-amount">
+							<label class="incoming-payment-amount-label">Сумма в рублях</label>
+							<div class="ui-ctl ui-ctl-textbox ui-ctl-wa">
+								<input name="AMOUNT"
+									   type="text"
+									   class="ui-ctl-element"
+									   placeholder="">
+							</div>
+						</div>
+						<div class="incoming-payment-amount-field incoming-payment-item-left-point-amount">
+							<label class="incoming-payment-amount-label">Сумма в баллах</label>
+							<div class="ui-ctl ui-ctl-textbox ui-ctl-wa">
+								<input name="AMOUNT_POINT"
+									   type="text"
+									   class="ui-ctl-element"
+									   readonly
+									   placeholder="">
+							</div>
+						</div>
 					</div>
 					<div class="incoming-payment-point-rate" style="display: none; margin-top: 5px; font-size: 12px; color: #666;">
 						Курс: <span class="incoming-payment-point-rate-value">—</span>

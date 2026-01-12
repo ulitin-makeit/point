@@ -12,6 +12,9 @@ BX.Brs.IncomingPayment.prototype.init = function () {
 	$('.incoming-payment-item-settings input[name=PAYMENT_TYPE]').on('click', this.changeDisplayPaymentType);
 	$('.payment-point select[name="POINT_TYPE"]').on('change', this.onPointTypeChange.bind(this));
 
+	// Добавляем обработчик изменения суммы в рублях для пересчёта в баллы
+	$('.incoming-payment-item input[name=AMOUNT]').on('input', this.recalculatePointsFromRub.bind(this));
+
 	this.fincardSchemeWork = $('#incomingPayments').attr('data-fincard-scheme-work');
 
 	this.changePayment = $('.cor-client-choice .cor-client-type-select input[type="radio"]');
@@ -76,6 +79,44 @@ BX.Brs.IncomingPayment.prototype.getPointConversionRate = function(pointType) {
 };
 
 /**
+ * Пересчитывает сумму баллов из суммы в рублях.
+ * Баллы = ceil(рубли / курс)
+ */
+BX.Brs.IncomingPayment.prototype.recalculatePointsFromRub = function() {
+	var inputAmount = $('.incoming-payment-item input[name="AMOUNT"]');
+	var inputAmountPoint = $('.incoming-payment-item input[name="AMOUNT_POINT"]');
+	var inputPointType = $('.payment-point select[name="POINT_TYPE"]');
+	
+	var pointType = inputPointType.val();
+	
+	// Если тип баллов не выбран — очищаем поле баллов
+	if (!pointType || pointType === '') {
+		inputAmountPoint.val('');
+		return;
+	}
+	
+	var rate = this.getPointConversionRate(pointType);
+	
+	if (rate === null || rate <= 0) {
+		inputAmountPoint.val('');
+		return;
+	}
+	
+	// Получаем сумму в рублях (убираем пробелы из форматированного числа)
+	var amountRub = parseFloat(inputAmount.val().replace(/\s/g, '').replace(',', '.')) || 0;
+	
+	if (amountRub <= 0) {
+		inputAmountPoint.val('');
+		return;
+	}
+	
+	// Пересчитываем в баллы с округлением вверх
+	var amountPoints = Math.ceil(amountRub / rate);
+	
+	inputAmountPoint.val(amountPoints);
+};
+
+/**
  * Обновляет отображение курса баллов при смене типа.
  *
  * @param {string} pointType - тип баллов ('mr_rub' или 'imperia_rub')
@@ -109,16 +150,8 @@ BX.Brs.IncomingPayment.prototype.inputPreset = function(){
 	let isCredit = $('#changeDealPayTypeCredit').prop('checked');
 	let maxAmount = 9999999999;
 
-	$('.incoming-payment-item input[name=AMOUNT_POINT]').inputmask(
-		'currency',
-		{
-			min: 0,
-			max: maxAmount,
-			groupSeparator: ' ',
-			autoUnmask: true,
-			nullable: false
-		}
-	);
+	// Поле баллов - только для отображения, без маски (readonly)
+	// Маска не применяется, так как поле пересчитывается автоматически
 
 	if(isCredit){
 		maxAmount = Number($('.payments-owes-rub').attr('data-amount-debt'))*-1;
@@ -129,7 +162,7 @@ BX.Brs.IncomingPayment.prototype.inputPreset = function(){
 		{
 			min: 0,
 			max: maxAmount,
-			groupSeparator: ' ',
+			groupSeparator: ' ',
 			autoUnmask: true,
 			nullable: false
 		}
@@ -388,15 +421,17 @@ BX.Brs.IncomingPayment.prototype.setPointAmount = function (response){
 BX.Brs.IncomingPayment.prototype.setInputPointAmount = function (response){
 
 	var inputAmountPoint = $('.incoming-payment-input-item input[name="AMOUNT_POINT"]');
+	var inputAmount = $('.incoming-payment-input-item input[name="AMOUNT"]');
 	var domAmountDebp = $('.payments-owes-rub[data-amount-debt]');
 
 	var inputPointType = $('.incoming-payment-type-point select[name="POINT_TYPE"]');
 
 	var pointType = inputPointType.val();
 
-	// Если тип не выбран — очищаем поле суммы и выходим
+	// Если тип не выбран — очищаем поля и выходим
 	if(!pointType || pointType === ''){
 		inputAmountPoint.val('');
+		inputAmount.val('');
 		return;
 	}
 
@@ -415,6 +450,9 @@ BX.Brs.IncomingPayment.prototype.setInputPointAmount = function (response){
 			amount = amountDebt;
 		}
 
+		// Устанавливаем сумму в рублях
+		inputAmount.val(amount);
+
 		if(amount > 0){
 
 			let rate = BX.Brs.IncomingPayment.prototype.getPointConversionRate(pointType);
@@ -424,6 +462,7 @@ BX.Brs.IncomingPayment.prototype.setInputPointAmount = function (response){
 				return;
 			}
 
+			// Пересчитываем баллы из рублей с округлением вверх
 			amount = Math.ceil(amount / rate);
 
 		}
@@ -491,6 +530,8 @@ BX.Brs.IncomingPayment.prototype.makePaymentPoint = function (dealId, contactId,
 BX.Brs.IncomingPayment.prototype.onPointTypeChange = function(event) {
 	var pointType = $(event.currentTarget).val();
 	this.updatePointRateDisplay(pointType);
+	// Пересчитываем баллы при смене типа
+	this.recalculatePointsFromRub();
 };
 
 BX.Brs.IncomingPayment.prototype.prepareParams = function () {
