@@ -12,6 +12,8 @@ BX.Brs.IncomingPayment.prototype.init = function () {
 	$('.incoming-payment-item-settings input[name=PAYMENT_TYPE]').on('click', this.changeDisplayPaymentType);
 	$('.payment-point select[name="POINT_TYPE"]').on('change', this.onPointTypeChange.bind(this));
 
+	this.fincardSchemeWork = $('#incomingPayments').attr('data-fincard-scheme-work');
+
 	this.changePayment = $('.cor-client-choice .cor-client-type-select input[type="radio"]');
 	this.paymentByUser = $('#paymentByUser');
 	this.paymentByCorp = $('#paymentByCorp');
@@ -216,7 +218,6 @@ BX.Brs.IncomingPayment.prototype.changeDisplayPaymentType = function () {
 	left.removeClass('incoming-payment-type-point');
 	infoPoint.hide(0);
 	buttonPointAmount.hide(0);
-	buttonAmount.show(0);
 
 	if ($(this).val() === 'card') {
 		incoming.addClass('incoming-payment-type-card');
@@ -239,7 +240,6 @@ BX.Brs.IncomingPayment.prototype.changeDisplayPaymentType = function () {
 		infoPoint.show(0);
 
 		buttonPointAmount.show(0);
-		buttonAmount.hide(0);
 
 	}
 
@@ -277,12 +277,22 @@ BX.Brs.IncomingPayment.prototype.initiatePayment = function (paymentTypeAction, 
 BX.Brs.IncomingPayment.prototype.initiatePaymentPoint = function (dealId, contactId, event) {
 
 	event.preventDefault();
-
 	var formData = {};
 
 	$(event.currentTarget).closest('form').serializeArray().forEach(function (item) {
 		formData[item['name']] = item['value'];
 	});
+
+	if (!Boolean(this.fincardSchemeWork)) {
+		this.wrong('Оплата баллами возможна только после создания финансовой карты');
+		return;
+	}
+
+
+	if (this.fincardSchemeWork === 'RS_TLS_SERVICE_FEE') {
+		this.wrong('Оплата баллами невозможна для типа финансовой карты "Сервисный сбор РС ТЛС"');
+		return;
+	}
 
 	// Проверка что тип баллов выбран
 	if (!formData['POINT_TYPE'] || formData['POINT_TYPE'] === '') {
@@ -303,19 +313,6 @@ BX.Brs.IncomingPayment.prototype.initiatePaymentPoint = function (dealId, contac
 	}
 
 	let amount = formData['AMOUNT_POINT'];
-
-	if(amount > 0){
-
-		let rate = this.getPointConversionRate(formData['POINT_TYPE']);
-
-		if (rate === null) {
-			this.wrong('Не удалось получить курс баллов для выбранного типа.');
-			return;
-		}
-
-		amount = Math.ceil(amount / rate);
-
-	}
 
 	if (Number(formData['AMOUNT_POINT']) > pointMaxAmount) {
 		this.wrong('Указанная сумма баллов превышает количество баллов на бонусном счёте клиента.');
