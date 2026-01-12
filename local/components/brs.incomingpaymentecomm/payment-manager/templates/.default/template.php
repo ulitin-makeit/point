@@ -60,7 +60,7 @@ if (!$clientId) {
 }
 
 ?>
-<div id="incomingPayments">
+<div id="incomingPayments" data-fincard-scheme-work="<?= $arParams['FIN_CARD_SCHEME_WORK']; ?>">
 	<? $APPLICATION->ShowViewContent('paymentDeferred'); ?>
 	<? $APPLICATION->ShowViewContent('paymentOwes'); ?>
 	<div class="create-payment-container">
@@ -219,19 +219,18 @@ if (!$clientId) {
 			</div>
 
 			<div class="incoming-payment-item-left">
-
 				<div class="incoming-payment-input-item">
 					<div class="ui-ctl ui-ctl-textbox ui-ctl-wa incoming-payment-item-left-amount">
 						<input name="AMOUNT"
 							   type="text"
 							   class="ui-ctl-element"
-							   placeholder="Сумма аванса">
+							   placeholder="">
 					</div>
 					<div class="ui-ctl ui-ctl-textbox ui-ctl-wa incoming-payment-item-left-point-amount">
 						<input name="AMOUNT_POINT"
 							   type="text"
 							   class="ui-ctl-element"
-							   placeholder="Сумма баллов в рублях">
+							   placeholder="">
 					</div>
 					<div class="incoming-payment-point-rate" style="display: none; margin-top: 5px; font-size: 12px; color: #666;">
 						Курс: <span class="incoming-payment-point-rate-value">—</span>
