@@ -67,13 +67,11 @@ class AccountingEntryService
 	 */
 	private function isDealValidForProcessing(int $dealId): bool
 	{
-		$controlStageList = \getStageListOfDealConstant('STATUS_CONTROL_DEAL');
 
 		$deal = DealTable::getList([
 			'select' => ['ID', 'STAGE_ID'],
 			'filter' => [
-				'ID' => $dealId,
-				'STAGE_ID' => $controlStageList
+				'ID' => $dealId
 			],
 			'limit' => 1
 		])->fetch();
@@ -118,7 +116,7 @@ class AccountingEntryService
 		}
 
 		// Создаём бухгалтерские проводки на основе схемы работы финансовой карты
-		$this->createAccountingEntries($dealId, $payment, $financialCard);
+		$this->createAccountingEntries($dealId, $financialCard);
 	}
 
 	/**
@@ -196,12 +194,10 @@ class AccountingEntryService
 	 * - Проводка "Акт покупателя" создаётся всегда, если она ещё не была создана ранее
 	 *
 	 * @param int $dealId идентификатор сделки
-	 * @param EO_PaymentTransaction $payment платёж баллами
 	 * @param array $financialCard финансовая карта с информацией о схеме работы
 	 * @return void
-	 * @throws \Throwable
 	 */
-	private function createAccountingEntries(int $dealId, EO_PaymentTransaction $payment, array $financialCard): void
+	private function createAccountingEntries(int $dealId, array $financialCard): void
 	{
 		// Проверяем, является ли схема работы схемой поставщика-агента
 		// Для таких схем проводка "Акт поставщика" не создаётся
@@ -212,14 +208,14 @@ class AccountingEntryService
 		// 2. Проводка ещё не была создана ранее
 		if (!$isSupplierAgentScheme) {
 			if (!$this->isAccountingEntryExists($dealId, self::ENTITY_SERVICE_ACT_SUPPLIER)) {
-				ServiceActSupplier::handler($payment, []);
+				ServiceActSupplier::handler(['dealId' => $dealId], []);
 			}
 		}
 
 		// Создаём проводку "Акт покупателя", если она ещё не была создана
 		// Эта проводка создаётся всегда, независимо от схемы работы
 		if (!$this->isAccountingEntryExists($dealId, self::ENTITY_SERVICE_ACT_BUYER)) {
-			ServiceActBuyer::handler($payment, []);
+			ServiceActBuyer::handler(['dealId' => $dealId], []);
 		}
 	}
 
