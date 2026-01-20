@@ -2,15 +2,17 @@
 
 namespace Brs\Point\Service;
 
+use Bitrix\Main\ArgumentException;
 use Bitrix\Main\Loader;
-use Brs\Entities\Deal;
+use Bitrix\Main\ObjectPropertyException;
+use Bitrix\Main\SystemException;
+use Brs\IncomingPaymentEcomm\Models\EO_PaymentTransaction;
 use Brs\Main\Crm\Deal\Price;
 use Brs\Main\Model\Orm\Crm\Deal\DealTable;
 use Brs\Exchange1C\Models\AccountingEntryTable;
 use Brs\Exchange1c\AccountingEntry\ServiceActBuyer;
 use Brs\Exchange1c\AccountingEntry\ServiceActSupplier;
 use Brs\FinancialCard\Models\FinancialCardTable;
-use Brs\IncomingPaymentEcomm\Models\PaymentTransaction;
 use Brs\IncomingPaymentEcomm\Models\PaymentTransactionTable;
 
 /**
@@ -34,12 +36,11 @@ class AccountingEntryService
 		FinancialCardTable::SCHEME_RS_TLS_SERVICE_FEE
 	];
 
-	/**
-	 * Конструктор сервиса.
-	 */
 	public function __construct()
 	{
-		$this->ensureRequiredModules();
+		Loader::includeModule('brs.incomingpaymentecomm');
+		Loader::includeModule('brs.financialcard');
+		Loader::includeModule('brs.exchange1c');
 	}
 
 	/**
@@ -83,7 +84,7 @@ class AccountingEntryService
 
 	/**
 	 * Обрабатывает одну сделку по идентификатору: создаёт необходимые проводки.
-	 * 
+	 *
 	 * Выполняет последовательную проверку условий и создаёт бухгалтерские проводки:
 	 * 1. Проверяет наличие платежа баллами по сделке
 	 * 2. Проверяет отсутствие задолженности по сделке
@@ -122,14 +123,13 @@ class AccountingEntryService
 
 	/**
 	 * Получает последний платёж баллами по сделке.
-	 * 
+	 *
 	 * Ищет последний успешный платёж, выполненный баллами лояльности.
 	 * Используется для создания бухгалтерских проводок.
 	 *
 	 * @param int $dealId идентификатор сделки
-	 * @return PaymentTransaction|null объект платежа или null, если платёж не найден
 	 */
-	private function getLastPointPayment(int $dealId): ?PaymentTransaction
+	private function getLastPointPayment(int $dealId): ?EO_PaymentTransaction
 	{
 		// Получаем последний платёж баллами по сделке
 		// Сортируем по ID в убывающем порядке, чтобы получить самый последний
@@ -157,7 +157,7 @@ class AccountingEntryService
 
 	/**
 	 * Получает финансовую карту по сделке.
-	 * 
+	 *
 	 * Финансовая карта содержит информацию о схеме работы (SCHEME_WORK),
 	 * которая определяет, какие типы проводок необходимо создавать.
 	 *
@@ -189,18 +189,19 @@ class AccountingEntryService
 
 	/**
 	 * Создаёт бухгалтерские проводки для сделки.
-	 * 
+	 *
 	 * Логика создания проводок:
 	 * - Проводка "Акт поставщика" создаётся только если схема работы НЕ является схемой поставщика-агента
 	 *   и проводка ещё не была создана ранее
 	 * - Проводка "Акт покупателя" создаётся всегда, если она ещё не была создана ранее
 	 *
 	 * @param int $dealId идентификатор сделки
-	 * @param PaymentTransaction $payment платёж баллами
+	 * @param EO_PaymentTransaction $payment платёж баллами
 	 * @param array $financialCard финансовая карта с информацией о схеме работы
 	 * @return void
+	 * @throws \Throwable
 	 */
-	private function createAccountingEntries(int $dealId, PaymentTransaction $payment, array $financialCard): void
+	private function createAccountingEntries(int $dealId, EO_PaymentTransaction $payment, array $financialCard): void
 	{
 		// Проверяем, является ли схема работы схемой поставщика-агента
 		// Для таких схем проводка "Акт поставщика" не создаётся
@@ -224,7 +225,7 @@ class AccountingEntryService
 
 	/**
 	 * Проверяет существование бухгалтерской проводки.
-	 * 
+	 *
 	 * Используется для предотвращения дублирования проводок.
 	 * Проверяет наличие проводки определённого типа для конкретной сделки.
 	 *
@@ -236,24 +237,12 @@ class AccountingEntryService
 	{
 		// Проверяем наличие проводки по типу и идентификатору сделки
 		return AccountingEntryTable::getList([
-			'select' => ['ID'],
-			'filter' => [
-				'ENTITY' => $entity,
-				'DEAL_ID' => $dealId
-			],
-			'limit' => 1
-		])->getSelectedRowsCount() > 0;
-	}
-
-	/**
-	 * Подключает необходимые модули.
-	 *
-	 * @return void
-	 */
-	private function ensureRequiredModules(): void
-	{
-		Loader::includeModule('brs.incomingpaymentecomm');
-		Loader::includeModule('brs.financialcard');
-		Loader::includeModule('brs.exchange1c');
+				'select' => ['ID'],
+				'filter' => [
+					'ENTITY' => $entity,
+					'DEAL_ID' => $dealId
+				],
+				'limit' => 1
+			])->getSelectedRowsCount() > 0;
 	}
 }
