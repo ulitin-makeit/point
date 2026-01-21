@@ -249,22 +249,22 @@ class FinancialCardPayment
 		if ($this->strategyTypeByDate === 'PREPAYMENT') {
 			$this->addAgentFullPayment();
 		} else {
+			$strategyName = self::RECEIPT_STRATEGY[$finCardType];
+
+			$receiptStrategy = $this->$strategyName($this->price, $this->finCard);
+			$receiptStrategy->setPaymentTransferCredit();
+
+			$manager = new Receipt\Manager;
+
+			$manager->setDealId($this->dealId);
+			$manager->setPaymentId(0);
+			$manager->setStrategy($receiptStrategy);
+
+			$manager->create();
+
 			$accountingEntryService = new AccountingEntryService();
 			$accountingEntryService->createRealizationEntrance($this->finCard['DEAL_ID']);
 		}
-
-		$strategyName = self::RECEIPT_STRATEGY[$finCardType];
-
-		$receiptStrategy = $this->$strategyName($this->price, $this->finCard);
-		$receiptStrategy->setPaymentTransferCredit();
-
-		$manager = new Receipt\Manager;
-
-		$manager->setDealId($this->dealId);
-		$manager->setPaymentId(0);
-		$manager->setStrategy($receiptStrategy);
-
-		$manager->create();
 	}
 
 	public function makeRefundPoint()
