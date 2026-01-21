@@ -2,13 +2,9 @@
 
 namespace Brs\Point\Service;
 
-use Bitrix\Main\ArgumentException;
 use Bitrix\Main\Loader;
-use Bitrix\Main\ObjectPropertyException;
-use Bitrix\Main\SystemException;
 use Brs\IncomingPaymentEcomm\Models\EO_PaymentTransaction;
 use Brs\Main\Crm\Deal\Price;
-use Brs\Main\Model\Orm\Crm\Deal\DealTable;
 use Brs\Exchange1C\Models\AccountingEntryTable;
 use Brs\Exchange1c\AccountingEntry\ServiceActBuyer;
 use Brs\Exchange1c\AccountingEntry\ServiceActSupplier;
@@ -50,49 +46,6 @@ class AccountingEntryService
 	 * @return void
 	 */
 	public function createRealizationEntrance(int $dealId): void
-	{
-		if (!$this->isDealValidForProcessing($dealId)) {
-			return;
-		}
-
-		$this->processDealById($dealId);
-	}
-
-
-	/**
-	 * Проверяет, подходит ли сделка для обработки.
-	 *
-	 * @param int $dealId идентификатор сделки
-	 * @return bool true если сделка подходит для обработки
-	 */
-	private function isDealValidForProcessing(int $dealId): bool
-	{
-
-		$deal = DealTable::getList([
-			'select' => ['ID', 'STAGE_ID'],
-			'filter' => [
-				'ID' => $dealId
-			],
-			'limit' => 1
-		])->fetch();
-
-		return $deal !== false;
-	}
-
-
-	/**
-	 * Обрабатывает одну сделку по идентификатору: создаёт необходимые проводки.
-	 *
-	 * Выполняет последовательную проверку условий и создаёт бухгалтерские проводки:
-	 * 1. Проверяет наличие платежа баллами по сделке
-	 * 2. Проверяет отсутствие задолженности по сделке
-	 * 3. Проверяет наличие финансовой карты
-	 * 4. Создаёт необходимые проводки на основе схемы работы
-	 *
-	 * @param int $dealId идентификатор сделки
-	 * @return void
-	 */
-	private function processDealById(int $dealId): void
 	{
 		// Получаем последний платёж баллами по сделке
 		// Если платежа нет, обработка прекращается
