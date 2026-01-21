@@ -65,17 +65,35 @@ class FinancialCardPayment
 
 	public function __construct(int $dealId)
 	{
+		$this->logDebug('FinancialCardPayment::__construct START', [
+			'deal_id' => $dealId,
+			'is_agent' => $this->isAgentContext(),
+			'context' => $this->getContextInfo()
+		]);
+
 		try {
 			$this->dealId = $dealId;
 
-			Loader::includeModule('crm');
-			Loader::includeModule('brs.financialcard');
-			Loader::includeModule('brs.receiptofd');
-			Loader::includeModule('brs.incomingpaymentecomm');
+			$modulesLoaded = [];
+			$modulesLoaded['crm'] = Loader::includeModule('crm');
+			$modulesLoaded['brs.financialcard'] = Loader::includeModule('brs.financialcard');
+			$modulesLoaded['brs.receiptofd'] = Loader::includeModule('brs.receiptofd');
+			$modulesLoaded['brs.incomingpaymentecomm'] = Loader::includeModule('brs.incomingpaymentecomm');
+
+			$this->logDebug('FinancialCardPayment::__construct - Modules loaded', [
+				'deal_id' => $dealId,
+				'modules_loaded' => $modulesLoaded
+			]);
 
 			$paymentTypeInfo = FinancialCard::getDealPaymentType($this->dealId);
 			$this->paymentType = $paymentTypeInfo['PAYMENT_TYPE'];
 			$this->payDate = $paymentTypeInfo['PAY_DATE'];
+
+			$this->logDebug('FinancialCardPayment::__construct - Payment type info', [
+				'deal_id' => $dealId,
+				'payment_type' => $this->paymentType,
+				'pay_date' => $this->payDate ? $this->payDate->format('Y-m-d H:i:s') : null
+			]);
 
 			$this->finCard = $this->getFinCard();
 			if ($this->finCard) {
@@ -86,14 +104,44 @@ class FinancialCardPayment
 				}
 				$this->companyId = $this->getIdSelectedCompany();
 				$this->companyName = $this->getCompanyName();
+
+				$this->logDebug('FinancialCardPayment::__construct - Financial card loaded', [
+					'deal_id' => $dealId,
+					'fin_card_id' => $this->finCard['ID'] ?? null,
+					'is_correction' => $this->isCorrection,
+					'has_currency' => !empty($this->price['CURRENCY']),
+					'currency_rate' => $this->currencyRate ?? null,
+					'company_id' => $this->companyId,
+					'company_name' => $this->companyName
+				]);
+			} else {
+				$this->logDebug('FinancialCardPayment::__construct - Financial card not found', [
+					'deal_id' => $dealId
+				]);
 			}
 
 			$this->deal = DealTable::getlist(['filter'=>['ID' => $this->dealId], 'select'=>['*', 'UF_*'], 'limit'=>1])->fetch();
 
 			$dealDate = new DealDate();
 			$this->dealBeginTime = $dealDate->getDatePrintFullReceipt($this->dealId);
+
+			$this->logDebug('FinancialCardPayment::__construct - Deal loaded', [
+				'deal_id' => $dealId,
+				'deal_begin_time' => $this->dealBeginTime ? $this->dealBeginTime->format('Y-m-d H:i:s') : null,
+				'deal_found' => !empty($this->deal)
+			]);
+
+			$this->logDebug('FinancialCardPayment::__construct END', [
+				'deal_id' => $dealId
+			]);
 		} catch (\Throwable $throwable) {
 			$throwableMessage = $throwable->getMessage();
+
+			$this->logDebug('FinancialCardPayment::__construct - Exception', [
+				'deal_id' => $this->dealId ?? null,
+				'error' => $throwableMessage,
+				'trace' => $throwable->getTraceAsString()
+			]);
 
 			$logger = Registry::getInstance('receipt');
 			$logger->error(
@@ -110,16 +158,39 @@ class FinancialCardPayment
 
 	public function run(): bool
 	{
+		$this->logDebug('FinancialCardPayment::run START', [
+			'deal_id' => $this->dealId,
+			'payment_type' => $this->paymentType
+		]);
+
 		try {
 
 			if ($this->paymentType === 'ADVANCE') {
+				$this->logDebug('FinancialCardPayment::run - Calling makeAdvance', [
+					'deal_id' => $this->dealId
+				]);
 				$this->makeAdvance();
+			} else {
+				$this->logDebug('FinancialCardPayment::run - Payment type is not ADVANCE, skipping', [
+					'deal_id' => $this->dealId,
+					'payment_type' => $this->paymentType
+				]);
 			}
+
+			$this->logDebug('FinancialCardPayment::run END - Success', [
+				'deal_id' => $this->dealId
+			]);
 
 			return true;
 
 		} catch (\Throwable $throwable) {
 			$throwableMessage = $throwable->getMessage();
+
+			$this->logDebug('FinancialCardPayment::run - Exception', [
+				'deal_id' => $this->dealId,
+				'error' => $throwableMessage,
+				'trace' => $throwable->getTraceAsString()
+			]);
 
 			$logger = Registry::getInstance('receipt');
 			$logger->error(
@@ -140,6 +211,11 @@ class FinancialCardPayment
 	 * @return false|void
 	 */
 	public function makePreReceipt() {
+		$this->logDebug('FinancialCardPayment::makePreReceipt START', [
+			'deal_id' => $this->dealId,
+			'payment_type' => $this->paymentType
+		]);
+
 		try {
 			$this->isPreReceipt = true;
 
@@ -147,11 +223,24 @@ class FinancialCardPayment
 
 			$strategyName = self::RECEIPT_STRATEGY[$finCardType]; // на основе схемы работы финансовой карты получаем метод формирования параметров чека
 
+			$this->logDebug('FinancialCardPayment::makePreReceipt - Strategy determined', [
+				'deal_id' => $this->dealId,
+				'fin_card_type' => $finCardType,
+				'strategy_name' => $strategyName
+			]);
+
 			if ($this->paymentType === 'ADVANCE') {
 
 				$this->strategyTypeByDate = $this->getStrategyTypeByDate($finCardType);
 
 				$advanceSum = $this->getAdvanceSum();
+
+				$this->logDebug('FinancialCardPayment::makePreReceipt - ADVANCE payment', [
+					'deal_id' => $this->dealId,
+					'strategy_type_by_date' => $this->strategyTypeByDate,
+					'advance_sum' => $advanceSum,
+					'price_result' => $this->price['RESULT'] ?? null
+				]);
 
 				if(round($advanceSum) != round($this->price['RESULT'])) {
 					if($advanceSum == 0){
@@ -159,6 +248,10 @@ class FinancialCardPayment
 					} else {
 						$this->strategyTypeByDate = 'CREDIT';
 					}
+					$this->logDebug('FinancialCardPayment::makePreReceipt - Strategy changed', [
+						'deal_id' => $this->dealId,
+						'new_strategy_type_by_date' => $this->strategyTypeByDate
+					]);
 				}
 
 				$receiptStrategy = $this->$strategyName($this->price, $this->finCard);
@@ -172,11 +265,22 @@ class FinancialCardPayment
 
 				$advanceSum = $this->getAdvanceSum();
 
+				$this->logDebug('FinancialCardPayment::makePreReceipt - Non-ADVANCE payment', [
+					'deal_id' => $this->dealId,
+					'advance_sum' => $advanceSum,
+					'price_result' => $this->price['RESULT'] ?? null
+				]);
+
 				if(round($advanceSum) != round($this->price['RESULT'])) {
 					$this->strategyTypeByDate = 'CREDIT';
 				} else {
 					$this->strategyTypeByDate = 'CREDIT_TRANSFER'; // тип чека "Полный расчёт по кредиту"
 				}
+
+				$this->logDebug('FinancialCardPayment::makePreReceipt - Final strategy', [
+					'deal_id' => $this->dealId,
+					'strategy_type_by_date' => $this->strategyTypeByDate
+				]);
 
 				$receiptStrategy = $this->$strategyName($this->price, $this->finCard); // в зависимости от схемы финансовой карты заполняем параметры чека
 
@@ -192,10 +296,27 @@ class FinancialCardPayment
 			$manager->setPaymentId(0);
 			$manager->setStrategy($receiptStrategy);
 
-			return $manager->createPreReceipt();
+			$this->logDebug('FinancialCardPayment::makePreReceipt - Creating pre-receipt', [
+				'deal_id' => $this->dealId
+			]);
+
+			$result = $manager->createPreReceipt();
+
+			$this->logDebug('FinancialCardPayment::makePreReceipt END', [
+				'deal_id' => $this->dealId,
+				'result' => $result !== false
+			]);
+
+			return $result;
 
 		} catch (\Throwable $throwable) {
 			$throwableMessage = $throwable->getMessage();
+
+			$this->logDebug('FinancialCardPayment::makePreReceipt - Exception', [
+				'deal_id' => $this->dealId,
+				'error' => $throwableMessage,
+				'trace' => $throwable->getTraceAsString()
+			]);
 
 			$logger = Registry::getInstance('receipt');
 			$logger->error(
@@ -213,21 +334,48 @@ class FinancialCardPayment
 	/** Схема оплаты клиентом Авансовая */
 	public function makeAdvance()
 	{
+		$this->logDebug('FinancialCardPayment::makeAdvance START', [
+			'deal_id' => $this->dealId,
+			'fin_card_id' => $this->finCard['ID'] ?? null
+		]);
+
 		$finCardType = FinancialCard::getFinCardTypeById($this->finCard['ID']);
 		$this->strategyTypeByDate = $this->getStrategyTypeByDate($finCardType);
+
+		$this->logDebug('FinancialCardPayment::makeAdvance - Strategy determined', [
+			'deal_id' => $this->dealId,
+			'fin_card_type' => $finCardType,
+			'strategy_type_by_date' => $this->strategyTypeByDate
+		]);
 
 		// TODO: Нужно вынести обработку балами в отдельный метод из makeAdvance в метод типа makePayPoint
 		$pointService = new PointPayment();
 		$isPaymentByPoint = $pointService->hasPointsPayment($this->dealId);
 
+		$this->logDebug('FinancialCardPayment::makeAdvance - Payment check', [
+			'deal_id' => $this->dealId,
+			'is_payment_by_point' => $isPaymentByPoint
+		]);
+
 		if ($isPaymentByPoint) {
+			$this->logDebug('FinancialCardPayment::makeAdvance - Calling makePoint', [
+				'deal_id' => $this->dealId
+			]);
 			$this->makePoint();
 		} else {
 			if ($this->strategyTypeByDate === 'PREPAYMENT') {
+				$this->logDebug('FinancialCardPayment::makeAdvance - Adding agent for full payment', [
+					'deal_id' => $this->dealId
+				]);
 				$this->addAgentFullPayment();
 			}
 
 			$strategyName = self::RECEIPT_STRATEGY[$finCardType];
+
+			$this->logDebug('FinancialCardPayment::makeAdvance - Creating receipt strategy', [
+				'deal_id' => $this->dealId,
+				'strategy_name' => $strategyName
+			]);
 
 			$receiptStrategy = $this->$strategyName($this->price, $this->finCard);
 
@@ -237,19 +385,50 @@ class FinancialCardPayment
 			$manager->setPaymentId(0);
 			$manager->setStrategy($receiptStrategy);
 
+			$this->logDebug('FinancialCardPayment::makeAdvance - Creating receipt', [
+				'deal_id' => $this->dealId
+			]);
+
 			$manager->create();
+
+			$this->logDebug('FinancialCardPayment::makeAdvance - Receipt created', [
+				'deal_id' => $this->dealId
+			]);
 		}
+
+		$this->logDebug('FinancialCardPayment::makeAdvance END', [
+			'deal_id' => $this->dealId
+		]);
 	}
 
 	public function makePoint()
 	{
+		$this->logDebug('FinancialCardPayment::makePoint START', [
+			'deal_id' => $this->dealId,
+			'fin_card_id' => $this->finCard['ID'] ?? null
+		]);
+
 		$finCardType = FinancialCard::getFinCardTypeById($this->finCard['ID']);
 		$this->strategyTypeByDate = $this->getStrategyTypeByDate($finCardType);
 
+		$this->logDebug('FinancialCardPayment::makePoint - Strategy determined', [
+			'deal_id' => $this->dealId,
+			'fin_card_type' => $finCardType,
+			'strategy_type_by_date' => $this->strategyTypeByDate
+		]);
+
 		if ($this->strategyTypeByDate === 'PREPAYMENT') {
+			$this->logDebug('FinancialCardPayment::makePoint - Strategy is PREPAYMENT, adding agent', [
+				'deal_id' => $this->dealId
+			]);
 			$this->addAgentFullPayment();
 		} else {
 			$strategyName = self::RECEIPT_STRATEGY[$finCardType];
+
+			$this->logDebug('FinancialCardPayment::makePoint - Creating receipt strategy', [
+				'deal_id' => $this->dealId,
+				'strategy_name' => $strategyName
+			]);
 
 			$receiptStrategy = $this->$strategyName($this->price, $this->finCard);
 			$receiptStrategy->setPaymentTransferCredit();
@@ -260,11 +439,28 @@ class FinancialCardPayment
 			$manager->setPaymentId(0);
 			$manager->setStrategy($receiptStrategy);
 
+			$this->logDebug('FinancialCardPayment::makePoint - Creating receipt', [
+				'deal_id' => $this->dealId
+			]);
+
 			$manager->create();
+
+			$this->logDebug('FinancialCardPayment::makePoint - Receipt created, calling AccountingEntryService', [
+				'deal_id' => $this->dealId,
+				'fin_card_deal_id' => $this->finCard['DEAL_ID'] ?? null
+			]);
 
 			$accountingEntryService = new AccountingEntryService();
 			$accountingEntryService->createRealizationEntrance($this->finCard['DEAL_ID']);
+
+			$this->logDebug('FinancialCardPayment::makePoint - AccountingEntryService called', [
+				'deal_id' => $this->dealId
+			]);
 		}
+
+		$this->logDebug('FinancialCardPayment::makePoint END', [
+			'deal_id' => $this->dealId
+		]);
 	}
 
 	public function makeRefundPoint()
@@ -319,6 +515,9 @@ class FinancialCardPayment
 	 * @return void
 	 */
 	public function makeCreditTransfer(): void {
+		$this->logDebug('FinancialCardPayment::makeCreditTransfer START', [
+			'deal_id' => $this->dealId
+		]);
 
 		$advanceSum = $this->getAdvanceSum();
 
@@ -326,6 +525,13 @@ class FinancialCardPayment
 
 		$finCardType = FinancialCard::getFinCardTypeById($this->finCard['ID']); // получаем схему работы финансовой карты
 		$strategyName = self::RECEIPT_STRATEGY[$finCardType]; // на основе схемы работы финансовой карты получаем метод формирования параметров чека
+
+		$this->logDebug('FinancialCardPayment::makeCreditTransfer - Strategy info', [
+			'deal_id' => $this->dealId,
+			'fin_card_type' => $finCardType,
+			'strategy_name' => $strategyName,
+			'advance_sum' => $advanceSum
+		]);
 
 		$receiptStrategy = $this->$strategyName($this->price, $this->finCard); // в зависимости от схемы финансовой карты заполняем параметры чека
 
@@ -339,8 +545,15 @@ class FinancialCardPayment
 		$manager->setPaymentId(0);
 		$manager->setStrategy($receiptStrategy);
 
+		$this->logDebug('FinancialCardPayment::makeCreditTransfer - Creating receipt', [
+			'deal_id' => $this->dealId
+		]);
+
 		$manager->create(); // создаём чек в системе
 
+		$this->logDebug('FinancialCardPayment::makeCreditTransfer END', [
+			'deal_id' => $this->dealId
+		]);
 	}
 
 	/**
@@ -352,14 +565,30 @@ class FinancialCardPayment
 	 * @throws Exception
 	 */
 	public function makeCreditPayment(bool $isFirstCheck = false, int $paymentId = 0): void {
+		$this->logDebug('FinancialCardPayment::makeCreditPayment START', [
+			'deal_id' => $this->dealId,
+			'is_first_check' => $isFirstCheck,
+			'payment_id' => $paymentId
+		]);
 
 		Loader::includeModule('brs.financialcard');
 
 		$credit = Credit::infoByDeal($this->dealId); // получаем информацию по текущему активному кредиту
 
 		if(!$credit){
+			$this->logDebug('FinancialCardPayment::makeCreditPayment - Credit not found', [
+				'deal_id' => $this->dealId
+			]);
 			throw new Exception('Не удалось найти активный кредит по текущей сделке');
 		}
+
+		$this->logDebug('FinancialCardPayment::makeCreditPayment - Credit info', [
+			'deal_id' => $this->dealId,
+			'credit_id' => $credit['ID'] ?? null,
+			'amount_remaining' => $credit['AMOUNT_REMAINING'] ?? null,
+			'amount_last_payment' => $credit['AMOUNT_LAST_PAYMENT'] ?? null,
+			'amount_paid' => $credit['AMOUNT_PAID'] ?? null
+		]);
 
 		if($credit['AMOUNT_REMAINING'] > 0){ // если есть активный и не до конца оплаченный кредит в сделке (т.е. сумма остатка платежей по кредиту больше 0)
 			$this->strategyTypeByDate = 'CREDIT'; // тип чека "Частичный расчёт по кредиту"
@@ -369,6 +598,13 @@ class FinancialCardPayment
 
 		$finCardType = FinancialCard::getFinCardTypeById($this->finCard['ID']); // получаем схему работы финансовой карты
 		$strategyName = self::RECEIPT_STRATEGY[$finCardType]; // на основе схемы работы финансовой карты получаем метод формирования параметров чека
+		
+		$this->logDebug('FinancialCardPayment::makeCreditPayment - Strategy info', [
+			'deal_id' => $this->dealId,
+			'fin_card_type' => $finCardType,
+			'strategy_name' => $strategyName,
+			'strategy_type_by_date' => $this->strategyTypeByDate
+		]);
 		
 		$receiptStrategy = $this->$strategyName($this->price, $this->finCard); // в зависимости от схемы финансовой карты заполняем параметры чека
 		
@@ -385,8 +621,15 @@ class FinancialCardPayment
 		$manager->setPaymentId($paymentId);
 		$manager->setStrategy($receiptStrategy);
 
+		$this->logDebug('FinancialCardPayment::makeCreditPayment - Creating receipt', [
+			'deal_id' => $this->dealId
+		]);
+
 		$manager->create(); // создаём чек в системе
 
+		$this->logDebug('FinancialCardPayment::makeCreditPayment END', [
+			'deal_id' => $this->dealId
+		]);
 	}
 
 	/**
@@ -610,6 +853,10 @@ class FinancialCardPayment
 
 	public function makePaymentCorrection(): bool
 	{
+		$this->logDebug('FinancialCardPayment::makePaymentCorrection START', [
+			'deal_id' => $this->dealId
+		]);
+
 		try {
 
 			Loader::includeModule('brs.incomingpaymentecomm');
@@ -619,7 +866,18 @@ class FinancialCardPayment
 			$finCardType = FinancialCard::getFinCardTypeById($this->finCard['ID']);
 			$this->strategyTypeByDate = $this->getStrategyTypeByDate($finCardType);
 
+			$this->logDebug('FinancialCardPayment::makePaymentCorrection - Strategy determined', [
+				'deal_id' => $this->dealId,
+				'fin_card_type' => $finCardType,
+				'strategy_type_by_date' => $this->strategyTypeByDate
+			]);
+
 			if($this->strategyTypeByDate === 'PREPAYMENT'){
+
+				$this->logDebug('FinancialCardPayment::makePaymentCorrection - Adding agent for PREPAYMENT', [
+					'deal_id' => $this->dealId,
+					'deal_begin_time' => $this->dealBeginTime ? $this->dealBeginTime->format('Y-m-d H:i:s') : null
+				]);
 
 				\CAgent::AddAgent(
 					$this->getAgentFunction(),
@@ -639,17 +897,38 @@ class FinancialCardPayment
 					]
 				])->getSelectedRowsCount() > 0;
 
+				$this->logDebug('FinancialCardPayment::makePaymentCorrection - Payment transaction check', [
+					'deal_id' => $this->dealId,
+					'is_exist_payment_success_transaction' => $isExistPaymentSuccessTransaction
+				]);
+
 				if(!$isExistPaymentSuccessTransaction){ // если нет списаний в карте коррекции, то чек не создаём
+					$this->logDebug('FinancialCardPayment::makePaymentCorrection - No payment transactions, skipping receipt creation', [
+						'deal_id' => $this->dealId
+					]);
 					return true;
 				}
 
 				$price = $this->getDifferencePriceCardCorrection();
 
+				$this->logDebug('FinancialCardPayment::makePaymentCorrection - Using difference price', [
+					'deal_id' => $this->dealId,
+					'price_keys' => array_keys($price)
+				]);
+
 			} else {
 				$price = $this->price;
+				$this->logDebug('FinancialCardPayment::makePaymentCorrection - Using regular price', [
+					'deal_id' => $this->dealId
+				]);
 			}
 
 			$strategyName = self::RECEIPT_STRATEGY[$finCardType];
+
+			$this->logDebug('FinancialCardPayment::makePaymentCorrection - Creating receipt strategy', [
+				'deal_id' => $this->dealId,
+				'strategy_name' => $strategyName
+			]);
 
 			$receiptStrategy = $this->$strategyName($price, $this->finCard);
 
@@ -659,11 +938,25 @@ class FinancialCardPayment
 			$manager->setPaymentId(0);
 			$manager->setStrategy($receiptStrategy);
 
+			$this->logDebug('FinancialCardPayment::makePaymentCorrection - Creating receipt', [
+				'deal_id' => $this->dealId
+			]);
+
 			$manager->create(); // создаём чек в системе
+
+			$this->logDebug('FinancialCardPayment::makePaymentCorrection END - Success', [
+				'deal_id' => $this->dealId
+			]);
 
 			return true;
 		} catch (\Throwable $throwable) {
 			$throwableMessage = $throwable->getMessage();
+
+			$this->logDebug('FinancialCardPayment::makePaymentCorrection - Exception', [
+				'deal_id' => $this->dealId,
+				'error' => $throwableMessage,
+				'trace' => $throwable->getTraceAsString()
+			]);
 
 			$logger = Registry::getInstance('receipt');
 			$logger->error(
@@ -822,15 +1115,33 @@ class FinancialCardPayment
 
 	public function addAgentFullPayment(): void
 	{
+		$this->logDebug('FinancialCardPayment::addAgentFullPayment START', [
+			'deal_id' => $this->dealId,
+			'deal_begin_time' => $this->dealBeginTime ? $this->dealBeginTime->format('Y-m-d H:i:s') : null
+		]);
+
 		$agentDate = $this->dealBeginTime;
 
 		// Если агент выставляется на утро 00:00:00 то ставим его на 10:05:00
 		if ($agentDate->format('His') === '000000') {
 			$agentDate->add('+10 hour +5 minutes');
+			$this->logDebug('FinancialCardPayment::addAgentFullPayment - Agent date adjusted', [
+				'deal_id' => $this->dealId,
+				'original_time' => $this->dealBeginTime->format('Y-m-d H:i:s'),
+				'adjusted_time' => $agentDate->format('Y-m-d H:i:s')
+			]);
 		}
 
+		$agentFunction = $this->getAgentFunction();
+
+		$this->logDebug('FinancialCardPayment::addAgentFullPayment - Adding agent', [
+			'deal_id' => $this->dealId,
+			'agent_function' => $agentFunction,
+			'agent_date' => $agentDate->format('Y-m-d H:i:s')
+		]);
+
 		\CAgent::AddAgent(
-			$this->getAgentFunction(),
+			$agentFunction,
 			'brs.receiptofd',
 			'Y',
 			10,
@@ -838,6 +1149,10 @@ class FinancialCardPayment
 			'Y',
 			$agentDate
 		);
+
+		$this->logDebug('FinancialCardPayment::addAgentFullPayment END', [
+			'deal_id' => $this->dealId
+		]);
 	}
 
 	private function getReceiptFieldsSrSupplierAgent(array $prices, array $finCard): ReceiptStrategy\AbstractReceipt
@@ -1240,9 +1555,87 @@ class FinancialCardPayment
 
 	public function clearAgentReceiptFullPayment()
 	{
+		$this->logDebug('FinancialCardPayment::clearAgentReceiptFullPayment START', [
+			'deal_id' => $this->dealId
+		]);
+
 		$dbAgents = \CAgent::GetList([], ['=NAME' => 'Brs\ReceiptOfd\Agent\ReceiptOfdAgent::printReceiptFullPayment(' . $this->dealId .');']);
+		$deletedCount = 0;
 		while ($agent = $dbAgents->Fetch()) {
 			\CAgent::Delete($agent['ID']);
+			$deletedCount++;
+		}
+
+		$this->logDebug('FinancialCardPayment::clearAgentReceiptFullPayment END', [
+			'deal_id' => $this->dealId,
+			'deleted_agents_count' => $deletedCount
+		]);
+	}
+
+	/**
+	 * Определяет, запущен ли код в контексте агента Битрикса.
+	 *
+	 * @return bool
+	 */
+	private function isAgentContext(): bool
+	{
+		// Проверяем наличие переменных, характерных для агентов
+		return (defined('BX_CRONTAB') && BX_CRONTAB === true) 
+			|| (php_sapi_name() === 'cli')
+			|| (!isset($_SERVER['REQUEST_METHOD']));
+	}
+
+	/**
+	 * Получает информацию о контексте выполнения.
+	 *
+	 * @return array
+	 */
+	private function getContextInfo(): array
+	{
+		return [
+			'sapi_name' => php_sapi_name(),
+			'is_cli' => php_sapi_name() === 'cli',
+			'is_crontab' => defined('BX_CRONTAB') ? BX_CRONTAB : false,
+			'has_request_method' => isset($_SERVER['REQUEST_METHOD']),
+			'request_method' => $_SERVER['REQUEST_METHOD'] ?? null,
+			'script_name' => $_SERVER['SCRIPT_NAME'] ?? null,
+			'argv' => $_SERVER['argv'] ?? null
+		];
+	}
+
+	/**
+	 * Логирует отладочную информацию.
+	 *
+	 * @param string $message сообщение
+	 * @param array $data дополнительные данные
+	 * @return void
+	 */
+	private function logDebug(string $message, array $data = []): void
+	{
+		$logData = [
+			'message' => $message,
+			'data' => $data,
+			'timestamp' => date('Y-m-d H:i:s'),
+			'memory_usage' => memory_get_usage(true),
+			'memory_peak' => memory_get_peak_usage(true)
+		];
+
+		// Используем стандартное логирование Битрикса
+		if (function_exists('AddMessage2Log')) {
+			AddMessage2Log(
+				print_r($logData, true),
+				'brs.receiptofd.FinancialCardPayment',
+				0,
+				true
+			);
+		}
+
+		// Дополнительно логируем через Monolog, если доступен
+		try {
+			$logger = Registry::getInstance('receipt');
+			$logger->debug($message, $logData);
+		} catch (\Exception $e) {
+			// Игнорируем ошибки логирования через Monolog
 		}
 	}
 }
