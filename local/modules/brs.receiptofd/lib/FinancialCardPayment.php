@@ -463,9 +463,39 @@ class FinancialCardPayment
 		]);
 	}
 
-	public function makeRefundPoint()
+	/**
+	 * Проверяет, нужно ли печатать чек возврата баллов: не печатаем, если карта возврата была создана до даты реализации сделки.
+	 *
+	 * @param int $refundCardId идентификатор карты возврата
+	 * @return bool true — печатать чек, false — не печатать
+	 */
+	private function shouldPrintRefundPointReceipt(int $refundCardId): bool
+	{
+		$refundCard = RefundCardTable::getList([
+			'select' => ['DATE_CREATE'],
+			'filter'  => ['=ID' => $refundCardId],
+			'limit'  => 1,
+		])->fetch();
+
+		if (!$refundCard || empty($refundCard['DATE_CREATE'])) {
+			return false;
+		}
+
+		$refundCardCreatedAt = $refundCard['DATE_CREATE'] instanceof DateTime
+			? $refundCard['DATE_CREATE']->getTimestamp()
+			: strtotime($refundCard['DATE_CREATE']);
+		$realizationTimestamp = $this->dealBeginTime->getTimestamp();
+
+		return $refundCardCreatedAt >= $realizationTimestamp;
+	}
+
+	public function makeRefundPoint(int $refundCardId)
 	{
 		Loader::includeModule('brs.financialcard');
+
+		if (!$this->shouldPrintRefundPointReceipt($refundCardId)) {
+			return;
+		}
 
 		$this->strategyTypeByDate = 'CREDIT_REFUND_TRANSFER';
 

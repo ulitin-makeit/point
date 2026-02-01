@@ -234,7 +234,7 @@ class RefundController extends Controller
 				$auditionRefundCardNotify->sendRefundCompleted($refundCardId);
 
 				$financialCardPayment = new FinancialCardPayment($dealId);
-				$financialCardPayment->makeRefundPoint();
+				$financialCardPayment->makeRefundPoint($refundCardId);
 
 				$this->makeReturnRefoundPoint($refundCard);
 			}
