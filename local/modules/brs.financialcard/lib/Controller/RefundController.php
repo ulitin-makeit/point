@@ -233,6 +233,8 @@ class RefundController extends Controller
 
 				$auditionRefundCardNotify->sendRefundCompleted($refundCardId);
 
+				(new DelayedRefundAgent())->clearDelayDate($refundCardId);
+
 				$financialCardPayment = new FinancialCardPayment($dealId);
 				$financialCardPayment->makeRefundPoint();
 
